@@ -58,6 +58,7 @@ function Stage(canvasEl, renderLoop)
 	this.context.strokeStyle = SPERMCOLOR;
 	this.context.lineWidth = TAILWIDTH;
 	this.context.lineJoin = "round";
+	this.context.lineCap = "round";
 
 	// listen for window resize events
 	this.watchResize();
@@ -87,8 +88,8 @@ Stage.prototype.clear = function()
 
 Stage.prototype.onResize = function()
 {
-	this.dom.width = this.dom.parentNode.clientWidth;
-	this.dom.height = this.dom.parentNode.clientHeight;
+	this.dom.setAttribute('width', this.dom.parentNode.clientWidth);
+	this.dom.setAttribute('height', this.dom.parentNode.clientHeight);
 	this.width = this.dom.clientWidth;
 	this.height = this.dom.clientHeight;
 };
