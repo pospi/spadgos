@@ -8,15 +8,18 @@
  *         	If you recognise bits of this code, tell me! :p Credit where it's due and all that.
  */
 
+var SPADGOS = {
+	SPERMS : 50,			// number of sperms to swim around
+	SPERMBORDER : 70,		// twice pixel-width of border to stay inside
+	SPERMCOLOR : '#ADADAD',
+	TAILWIDTH : 4,
+	FPS_BASELINE : 1000 / 60,
+	IMG_FLOWER_HEAD : 'flower-head.png'
+};
+
 (function() {
 
-var SPERMS = 10,			// number of sperms to swim around
-	SPERMBORDER = 70,		// twice pixel-width of border to stay inside
-	SPERMCOLOR = '#ADADAD',
-	TAILWIDTH = 4,
-	FPS_BASELINE = 1000 / 60,
-	IMG_FLOWER_HEAD = 'flower-head.png',
-	DEGREES_TO_RADIANS = 0.01745329;
+var DEGREES_TO_RADIANS = 0.01745329;
 
 // we need this for efficient window watching
 function debounce(func, threshold, execAsap)
@@ -67,8 +70,8 @@ function Stage(canvasEl, renderLoop)
 
 Stage.prototype.initDrawingArgs = function()
 {
-	this.context.strokeStyle = SPERMCOLOR;
-	this.context.lineWidth = TAILWIDTH;
+	this.context.strokeStyle = SPADGOS.SPERMCOLOR;
+	this.context.lineWidth = SPADGOS.TAILWIDTH;
 	this.context.lineJoin = "round";
 	this.context.lineCap = "round";
 };
@@ -108,11 +111,11 @@ Stage.prototype.onResize = function()
 
 	var sx = 0.5 * this.width,
 		sy = 0.5 * this.height,
-		boxheight = this.height - SPERMBORDER,
-		boxwidth = this.width - SPERMBORDER,
+		boxheight = this.height - SPADGOS.SPERMBORDER,
+		boxwidth = this.width - SPADGOS.SPERMBORDER,
 		i = 0;
 
-	while (i < SPERMS) {
+	while (i < SPADGOS.SPERMS) {
 		THE_SPERMS[i]._x = this.width * Math.random();
 		THE_SPERMS[i]._y = this.height * Math.random();
 		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
@@ -137,10 +140,10 @@ Stage.prototype.setAnimLoop = function(render, element)
 			};
 
 		if (running !== false) {
-			Stage.animMethod ? Stage.animMethod.call(window, run, element) : setTimeout(run, FPS_BASELINE);
+			Stage.animMethod ? Stage.animMethod.call(window, run, element) : setTimeout(run, SPADGOS.FPS_BASELINE);
 
 			deltaT = now - lastFrame;
-			if (deltaT < FPS_BASELINE) {
+			if (deltaT < SPADGOS.FPS_BASELINE) {
 				return;	// don't run if framerate is smaller than our baseline
 			}
 
@@ -297,7 +300,7 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 		this._y = this.by3;
 		this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + Math.PI;
 
-		this.modulate(deltaTime / FPS_BASELINE);
+		this.modulate(deltaTime / SPADGOS.FPS_BASELINE);
 		this.drawCurve();
 
 		this.t = this.t + speed;
@@ -343,7 +346,7 @@ flowerHead = new Image();
 flowerHead.onload = function() {
 	assetsLoaded = true;
 };
-flowerHead.src = IMG_FLOWER_HEAD;
+flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
 
 function loadFlowers()
 {
@@ -368,7 +371,7 @@ function loadFlowers()
 
 		this.clear();
 
-		while (i < SPERMS) {
+		while (i < SPADGOS.SPERMS) {
 			THE_SPERMS[i].onRenderFrame(deltaTime);
 			++i;
 		}
@@ -378,13 +381,13 @@ function loadFlowers()
 
 	var sx = 0.5 * canvas.width,
 		sy = 0.5 * canvas.height,
-		boxheight = canvas.height - SPERMBORDER,
-		boxwidth = canvas.width - SPERMBORDER,
+		boxheight = canvas.height - SPADGOS.SPERMBORDER,
+		boxwidth = canvas.width - SPADGOS.SPERMBORDER,
 		i = 0;
 
 	// build instances
 
-	while (i < SPERMS) {
+	while (i < SPADGOS.SPERMS) {
 		THE_SPERMS[i] = new tail(canvas);
 		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
 		++i;
