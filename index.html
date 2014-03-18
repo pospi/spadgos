@@ -36,10 +36,21 @@
 				margin-top: -1.275em;
 				margin-left: -2.5em;
 
-				font-size: 12.5em;
+				font-size: 12.5em;	/* 200px; 1px = 0.00625 */
 				font-weight: 900;
 				color: #222237;
-				text-shadow: 0 2px 3px #666666;
+				text-shadow: 0 0.00625em 0 #173C77,
+							 0 0.0125em 0 #1F3ACD,
+							 0 0.01875em 0 #26399D,
+							 0 0.025em 0 #1929A0,
+							 0 0.03125em 0 #0C208F,
+							 0 0.0375em 0.00625em rgba(0, 0, 0, 0.1),
+							 0 0 0.03125em rgba(0, 0, 0, 0.1),
+							 0 0.00625em 0.01875em rgba(0, 0, 0, 0.3),
+							 0 0.01875em 0.03125em rgba(0, 0, 0, 0.2),
+							 0 0.03125em 0.0625em rgba(0, 0, 0, 0.25),
+							 0 0.0625em 0.0625em rgba(0, 0, 0, 0.2),
+							 0 0.125em 0.125em rgba(0, 0, 0, 0.15);
 			}
 
 			dd {
@@ -54,18 +65,28 @@
 			}
 
 			ul {
-				/*padding-top: 4em;*/
 				font-weight: 200;
 				text-align: left;
 				line-height: 1.4;
 				list-style: none;
-				height: 4.2em;		/* line height X menuitem count */
+				height: 9.8em;		/* line height X menuitem count */
+				text-shadow: 0 0 1px #173C77;
 			}
 			ul a {
 				text-decoration: none;
-				color: #001037;
+				color: #DFDFDF;
 			}
-			ul a:hover { text-decoration: underline; }
+			ul a:hover {
+				text-decoration: underline;
+				font-weight: 900;
+				/*text-shadow: 0 0 1.8em #173C77,
+							0.6em -0.6em 0.6em #173C77,
+							-0.6em -0.6em 0.6em #173C77,
+							0.3em -0.3em 0.3em #173C77,
+							-0.3em -0.3em 0.3em #173C77,
+							0.3em 0.3em 0.3em #173C77,
+							-0.3em 0.3em 0.3em #173C77;*/
+			}
 
 			#SPADGOS, #draw, .logoalt {
 				position: absolute;
@@ -88,6 +109,47 @@
 				height: 303px;
 				margin-left: -72px;
 				margin-top: 0;
+			}
+
+			#party {
+				margin-top: 1em;
+				margin-left: -0.7em;
+			}
+			#party a {
+				color: #41434B;
+				text-shadow: 0 0 1.8em #F0F,
+							0.6em -0.6em 0.6em #F0F,
+							-0.6em -0.6em 0.6em #F0F,
+							0.3em -0.3em 0.3em #F0F,
+							-0.3em -0.3em 0.3em #F0F,
+							0.3em 0.3em 0.3em #F0F,
+							-0.3em 0.3em 0.3em #F0F;
+			}
+			body.disco {
+				background: black;
+			}
+			body.disco h1 {
+				text-shadow: 0 0 10px #FFFFFF, 0 0 20px #FFFFFF, 0 0 30px #FFFFFF, 0 0 40px #FF00DE, 0 0 70px #FF00DE, 0 0 80px #FF00DE, 0 0 100px #FF00DE, 0 0 150px #FF00DE
+			}
+			body.disco h1, body.disco ul a, body.disco dd, body.disco #party a {
+				color: white;
+			}
+			body.disco #party a {
+				font-weight: bold;
+				text-shadow: 0 0 1.8em #F0F,
+							0.6em -0.6em 0.6em #F0F,
+							-0.6em -0.6em 0.6em #F0F,
+							0.3em -0.3em 0.3em #F0F,
+							-0.3em -0.3em 0.3em #F0F,
+							0.3em 0.3em 0.3em #F0F,
+							-0.3em 0.3em 0.3em #F0F,
+							0 0 3.6em #F0F,
+							1.2em -1.2em 1.2em #F0F,
+							-1.2em -1.2em 1.2em #F0F,
+							0.6em -0.6em 0.6em #F0F,
+							-0.6em -0.6em 0.6em #F0F,
+							0.6em 0.6em 0.6em #F0F,
+							-0.6em 0.6em 0.6em #F0F;
 			}
 
 			@media (max-width: 71em) {
@@ -125,8 +187,6 @@
 				ul { font-size: 450%; margin-top: -0.7em; }
 			}
 		</style>
-
-		<script type="text/javascript" src="spad.js"></script>
 	</head>
 	<body>
 		<div id="SPADGOS">
@@ -143,6 +203,7 @@
 					<li><a href="http://spadgos.github.io/">fisher &nbsp; &nbsp;</a></li>
 					<li><a href="http://moles.spadgos.com/">moles &nbsp; &nbsp;</a></li>
 					<li><a href="http://pospi.spadgos.com/">pospi &nbsp; &nbsp;</a></li>
+					<li id="party"><a href="#" title="party!!!!!!!!111111111oneoneone"> &nbsp; &nbsp;party &nbsp; &nbsp;</a></li>
 				</ul>
 			</nav>
 		</div>
@@ -150,4 +211,8 @@
 			<div class="logoalt"><img src="logo.gif" /></div>
 		</canvas>
 	</body>
+
+	<script type="text/javascript" src="spad.js"></script>
+
+	<!-- :TODO: clicky -->
 </html>
