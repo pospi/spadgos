@@ -112,7 +112,9 @@ Stage.prototype.onResize = function()
 		i = 0;
 
 	while (i < SPERMS) {
-		THE_SPERMS[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
+		THE_SPERMS[i]._x = this.width * Math.random();
+		THE_SPERMS[i]._y = this.height * Math.random();
+		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
 		++i;
 	}
 };
@@ -201,6 +203,7 @@ function tail(canvas)
 {
 	var i, opt;
 
+	this.canvas = canvas;
 	this.context = canvas.context;
 
 	this.bits =			15;
@@ -216,8 +219,8 @@ function tail(canvas)
 	this.agility =		15;
 	this.speed =		5;
 	this.ang =			360 * Math.random();
-	this._x =			canvas.width * Math.random();
-	this._y =			canvas.height * Math.random();
+	this._x =			this.canvas.width * Math.random();
+	this._y =			this.canvas.height * Math.random();
 	this.phase = 		6.283185 * Math.random();
 	this.t = 			Math.random();
 	this.fr = 			0;
@@ -257,13 +260,17 @@ tail.prototype.drawCurve = function()
 	this.context.stroke();
 };
 
-tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle, vangle)
+tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 {
 	var x1, y1, x2, y2, x3, y3, x4, y4, x4z, y4z, angle, anglez, r, q, speed, k,
-		top = ypos - 0.5 * boxh,
-		bottom = ypos + 0.5 * boxh,
-		left = xpos - 0.5 * boxw,
-		right = xpos + 0.5 * boxw;
+		xpos = this._x,
+		ypos = this._y,
+		totalH = this.canvas.height,
+		totalW = this.canvas.width,
+		top = (totalH - boxh) / 2,
+		bottom = totalH - ((totalH - boxh) / 2),
+		left = (totalW - boxw) / 2,
+		right = totalW - ((totalW - boxw) / 2);
 
 	angle = 360 * Math.random();
 	r = jump + jump * (Math.random() - 0.5);
@@ -280,6 +287,7 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 			loopCount = 0;
 
 		bez.bezierSegment.call(this, 0, this.t);
+
 		this._x = this.bx3;
 		this._y = this.by3;
 		this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + Math.PI;
@@ -373,7 +381,7 @@ function loadFlowers()
 
 	while (i < SPERMS) {
 		THE_SPERMS[i] = new tail(canvas);
-		THE_SPERMS[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
+		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
 		++i;
 	}
 
