@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+	<head>
+		<title>spadgos</title>
+		<meta charset="UTF-8" />
+
+		<link rel='stylesheet' type='text/css' href='http://fonts.googleapis.com/css?family=Raleway:900' />
+		<style type="text/css">
+			html {
+				font-size: 100%;
+				*font-size: 16px;
+				line-height: 1.6;
+			}
+			body {
+				font-size: 100%;
+				font-family: 'Raleway', 'Arial Black', arial, sans-serif;
+				background: #41434B;
+			}
+			body, html {
+				height: 100%;
+			}
+			html, body, dl, h1 {
+				margin : 0;
+			}
+
+			h1, .logoalt img {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				text-align: center;
+			}
+			h1 {
+				height: 2.55em;
+				width: 5em;
+				margin-top: -1.275em;
+				margin-left: -2.5em;
+
+				font-size: 12.5em;
+				font-weight: 900;
+				color: #222237;
+				text-shadow: 0 2px 3px #666666;
+			}
+			dd {
+				margin-left: 24em;
+				margin-top: -2em;
+
+				font-size: 0.1em;
+				font-family: Tahoma, Arial, sans-serif;
+				font-weight: 200;
+				color: #7E7E7E;
+				text-shadow: 0 0 1px rgba(0,0,0,0.25);
+			}
+			#SPADGOS, #draw, .logoalt {
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+			#SPADGOS, .logoalt {
+				width: 100%;
+				height: 100%;
+			}
+			#draw, .logoalt {
+				z-index: 0;
+			}
+			#SPADGOS {
+				z-index: 1;
+			}
+			.logoalt img {
+				display: block;
+				width: 144px;
+				height: 303px;
+				margin-left: -72px;
+				margin-top: 0;
+			}
+
+			@media (max-width: 71em) {
+				body { font-size: 80%; }
+			}
+			@media (max-width: 61em) {
+				body { font-size: 70%; }
+				h1 { margin-top: -1.5em; }
+				dd { font-size: 0.13em; margin-left: 19em; }
+			}
+			@media (max-width: 51em) {
+				body { font-size: 60%; }
+				dd { font-size: 0.15em; margin-left: 17em; }
+			}
+			@media (max-width: 41em) {
+				body { font-size: 50%; }
+				dd { font-size: 0.17em; margin-left: 16em; }
+			}
+			@media (max-width: 36em) {
+				body { font-size: 35%; }
+				h1 { margin-top: -1.8em; }
+				dd { font-size: 0.2em; margin-left: 14em; margin-top: -1em; }
+			}
+			@media (max-width: 28em) {
+				body { font-size: 25%; }
+			}
+			@media (max-width: 20em) {
+				body { font-size: 15%; }
+				dd { font-size: 0.3em; margin-left: 12em; }
+			}
+		</style>
+
+		<script type="text/javascript" src="spad.js"></script>
+	</head>
+	<body>
+		<div id="SPADGOS">
+			<h1>
+				<dl>
+					<dt>spadgos</dt>
+					<dd>(spăd·jŏs)</dd>
+				</dl>
+			</h1>
+		</div>
+		<canvas id="draw" width="100%" height="100%">
+			<div class="logoalt"><img src="logo.gif" /></div>
+		</canvas>
+	</body>
+</html>
