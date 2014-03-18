@@ -222,7 +222,12 @@ bez.bezierSegment = function(t1, t2)
 };
 bez.setBezierPoints = function(x1, y1, x2, y2, x3, y3)
 {
-	(this.x1 = this.x1, this.y1 = this.y1, this.x2 = this.x2, this.y2 = this.y2, this.x3 = this.x3, this.y3 = this.y3);
+	this.x1 = x1;
+	this.y1 = y1;
+	this.x2 = x2;
+	this.y2 = y2;
+	this.x3 = x3;
+	this.y3 = y3;
 };
 
 //------------------------------------------------------------------------------
@@ -269,8 +274,8 @@ tail.prototype.modulate = function()
 	var i = 1;
 
 	while (i <= this.bits) {
-		var deltax = this.x[i] - this.x[i - 1];
-		var deltay = this.y[i] - this.y[i - 1];
+		var deltax = (this.x[i] || 0) - this.x[i - 1];
+		var deltay = (this.y[i] || 0) - this.y[i - 1];
 		this.a[i] = Math.atan2(deltay, deltax);
 		this.x[i] = this.x[i - 1] + this.r[i - 1] * Math.cos(this.a[i - 1]);
 		this.y[i] = this.y[i - 1] + this.r[i - 1] * Math.sin(this.a[i - 1]);
@@ -308,28 +313,28 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 	this.y4z,
 	this.angle,
 	this.anglez,
-	this.r,
+	this.r2,
 	this.q,
-	this.speed,
+	this.speed = speed,
 	this.k,
 	this.top = ypos - 0.5000000 * boxh,
 	this.bottom = ypos + 0.5000000 * boxh,
 	this.left = xpos - 0.5000000 * boxw,
 	this.right = xpos + 0.5000000 * boxw;
 
+	this.t = Math.random();
+
 	this.angle = 360 * Math.random();
-	this.r = jump + jump * (Math.random() - 0.5000000);
-	this.x2 = xpos + this.r * Math.cos(this.angle * DEGREES_TO_RADIANS);
-	this.y2 = ypos + this.r * Math.sin(this.angle * DEGREES_TO_RADIANS);
+	this.r2 = jump + jump * (Math.random() - 0.5000000);
+	this.x2 = xpos + this.r2 * Math.cos(this.angle * DEGREES_TO_RADIANS);
+	this.y2 = ypos + this.r2 * Math.sin(this.angle * DEGREES_TO_RADIANS);
 
 	this.angle = this.angle + (Math.random() ? 1 : -1) * (90 + 90 * (Math.random() - 0.5000000));
-	this.r = this.jump + this.jump * (Math.random() - 0.5000000);
-	this.x4 = this.x2 + this.r * Math.cos(this.angle * DEGREES_TO_RADIANS);
-	this.y4 = this.y2 + this.r * Math.sin(this.angle * DEGREES_TO_RADIANS);
+	this.r2 = jump + jump * (Math.random() - 0.5000000);
+	this.x4 = this.x2 + this.r2 * Math.cos(this.angle * DEGREES_TO_RADIANS);
+	this.y4 = this.y2 + this.r2 * Math.sin(this.angle * DEGREES_TO_RADIANS);
 	this.x3 = 0.5000000 * (this.x2 + this.x4),
 	this.y3 = 0.5000000 * (this.y2 + this.y4);
-
-	this.t = Math.random();
 
 	bez.setBezierPoints.call(this, xpos, ypos, this.x2, this.y2, this.x3, this.y3);
 };
@@ -340,7 +345,7 @@ tail.prototype.onRenderFrame = function()
 	bez.bezierSegment.call(this, 0, this.t);
 	this._x = this.bx3;
 	this._y = this.by3;
-	this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593E+000;
+	this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593;
 	this.modulate();
 
 	this.drawCurve();
@@ -416,7 +421,6 @@ window.onload = function()
 	while (i < SPERMS) {
 		k[i] = new tail(canvas);
 		k[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
-		k[i].modulate();
 		++i;
 	}
 
