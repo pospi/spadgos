@@ -9,6 +9,9 @@
  */
 
 var SPADGOS = {
+	BG_COLOR : '#41434B',
+	DEFAULT_BG_COLOR : '#41434B',
+
 	FPS_BASELINE : 1000 / 60,
 	IMG_FLOWER_HEAD : 'flower-head.png',
 
@@ -104,7 +107,12 @@ Stage.prototype.watchResize = function()
 
 Stage.prototype.clear = function()
 {
-	this.context.clearRect(0, 0, this.width, this.height);
+	var oldFill = this.context.fillStyle;
+
+	this.context.fillStyle = SPADGOS.BG_COLOR;
+	this.context.fillRect(0, 0, this.width, this.height);
+
+	this.context.fillStyle = oldFill;
 };
 
 Stage.prototype.onResize = function()
@@ -385,10 +393,7 @@ var HAS_PARTIED_LIKE_ITS_1984 = false,
 					[254,52,154], [204,153,254],
 					[101,153,255], [3,205,255], [255,255,255]],
 
-	theParty = null, neighboursParty = null, upstairsParty = null,	// timeout handles
-	partyTargets = [],
-	partyTargets2 = [],
-	partyTargetsBackup = {},
+	theParty = null,
 	PARTY_SPRITES = {},		// tinted for each colour above
 	spriteData;				// original grey tint
 
@@ -508,21 +513,6 @@ function partyDown(e)
 			PARTY_SPRITES[colorHex(color)] = generateTintImage(SPADGOS.flowerHead, spriteData, color[0], color[1], color[2]);
 		}
 
-		// find DOM nodes we want to animate colour of
-
-		targets = document.getElementsByClassName('ct');
-		for (i = 0; i < targets.length; ++i) {
-			target = targets.item(i);
-
-			if (target.tagName.toLowerCase() == 'dt' || target.getAttribute('id') == 'party') {
-				style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
-				partyTargets.push(target);
-				partyTargetsBackup[partyTargets.length - 1] = style;
-			} else {
-				partyTargets2.push(target);
-			}
-		}
-
 		// done with init
 		HAS_PARTIED_LIKE_ITS_1984 = true;
 	}
@@ -530,8 +520,6 @@ function partyDown(e)
 	document.body.className = 'disco';
 
 	theParty = setInterval(partyOn, 250);
-	neighboursParty = setInterval(moreParty, 750);
-	// upstairsParty = setInterval(einParty, 500);
 }
 
 var LAST_RANDOM_SPERM = 0;
@@ -557,39 +545,10 @@ function partyOn()
 		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
 		sperms[i].color = colorHex(color);
 	}
+
+	// and the background
+	SPADGOS.BG_COLOR = colorHex(PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)]);
 }
-
-// ...yeah it hates animating text shadow over a canvas.. and rightly so :p
-
-// randomise titles, on two different timers cos the text shadow kills it
-function moreParty()
-{
-	document.body.style.backgroundColor = colorHex(PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)]);
-
-	// var i, l, target, color, hex, style;
-
-	// for (i = 0, l = partyTargets.length; i < l; ++i) {
-	// 	target = partyTargets[i];
-	// 	style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
-
-	// 	color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
-	// 	hex = colorHex(color);
-
-	// 	target.style.textShadow = style.replace(/(#[A-Z0-9]+)|(rgba?\s*\((\d|,|\s)+\))/g, hex);
-	// }
-}
-// function einParty()
-// {
-// 	var i, l, target, color, hex, style;
-
-// 	for (i = 0, l = partyTargets2.length; i < l; ++i) {
-// 		target = partyTargets2[i];
-
-// 		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
-
-// 		target.style.color = colorHex(color);
-// 	}
-// }
 
 function partyOver(e)
 {
@@ -599,8 +558,7 @@ function partyOver(e)
 	document.body.className = '';
 
 	clearInterval(theParty);
-	clearInterval(neighboursParty);
-	// clearInterval(upstairsParty);
+
 	theParty = null;
 	neighboursParty = null;
 	upstairsParty = null;
@@ -611,18 +569,8 @@ function partyOver(e)
 		sperms[i].spriteImage = SPADGOS.flowerHead;
 	}
 
-	// put DOM attributes back too
-	for (i = 0, l = partyTargets.length; i < l; ++i) {
-		target = partyTargets[i];
-		target.style.textShadow = partyTargetsBackup[i];
-	}
-	for (i = 0, l = partyTargets2.length; i < l; ++i) {
-		target = partyTargets2[i];
-		target.style.color = '';
-	}
-
 	// reset BG as well
-	document.body.style.backgroundColor = '#41434B';
+	SPADGOS.BG_COLOR = SPADGOS.DEFAULT_BG_COLOR;
 }
 
 /***********************************************************************************************************************************************/
