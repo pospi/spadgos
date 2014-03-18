@@ -9,12 +9,21 @@
  */
 
 var SPADGOS = {
-	SPERMS : 10,			// number of sperms to swim around
-	SPERMBORDER : 70,		// twice pixel-width of border to stay inside
-	SPERMCOLOR : [173,173,173],
-	TAILWIDTH : 4,
 	FPS_BASELINE : 1000 / 60,
-	IMG_FLOWER_HEAD : 'flower-head.png'
+	IMG_FLOWER_HEAD : 'flower-head.png',
+
+	SPERMBORDER : 70,			// twice pixel-width of border to stay inside
+	SPERMS : 20,				// number of sperms to swim around. only applies before activating the party
+
+	SPERM_SPEED_MIN : 0.07,
+	SPERM_SPEED_MAX : 0.38,
+	TAIL_BITS_MIN : 11,
+	TAIL_BITS_MAX : 19,
+	TAIL_COMPRESSION_MIN : 0.97,
+	TAIL_COMPRESSION_MAX : 0.985,
+
+	SPERMCOLOR : [173,173,173],
+	TAILWIDTH : 3				// pixel width
 };
 
 (function() {
@@ -118,7 +127,7 @@ Stage.prototype.onResize = function()
 	while (i < SPADGOS.SPERMS) {
 		THE_SPERMS[i]._x = this.width * Math.random();
 		THE_SPERMS[i]._y = this.height * Math.random();
-		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
+		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 20, 20, 20);
 		++i;
 	}
 };
@@ -235,22 +244,21 @@ function tail(canvas)
 
 	this.bits =			15;
 	this.comp =			0.98;
-	this.easing =		10;
-	this.largo =		8;
 	this.a =			[];
 	this.r =			[8];	// == largo
 	this.x =			[0];
 	this.y =			[0];
 	this.mx =			[];
 	this.my =			[];
-	this.agility =		15;
-	this.speed =		5;
+	this.speed =		0.1;
 	this.ang =			360 * Math.random();
 	this._x =			this.canvas.width * Math.random();
 	this._y =			this.canvas.height * Math.random();
 	this.phase = 		6.283185 * Math.random();
 	this.t = 			Math.random();
 	this.fr = 			0;
+
+	SPADGOS.randomiseSperm(this);
 
 	this.color =		colorHex(SPADGOS.SPERMCOLOR);
 	this.spriteImage =	SPADGOS.flowerHead;
@@ -292,9 +300,9 @@ tail.prototype.drawCurve = function()
 	this.context.stroke();
 };
 
-tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
+tail.prototype.bezierPath = function(boxw, boxh, jump, fangle, vangle)
 {
-	var x1, y1, x2, y2, x3, y3, x4, y4, x4z, y4z, angle, anglez, r, q, speed, k,
+	var x1, y1, x2, y2, x3, y3, x4, y4, x4z, y4z, angle, anglez, r, q, k,
 		xpos = this._x,
 		ypos = this._y,
 		totalH = this.canvas.height,
@@ -327,7 +335,7 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 		this.modulate(deltaTime / SPADGOS.FPS_BASELINE);
 		this.drawCurve();
 
-		this.t = this.t + speed;
+		this.t = this.t + this.speed;
 		if (this.t >= 1) {
 			r = jump + jump * (Math.random() - 0.5);
 			anglez = angle + (Math.floor(Math.random() * 2) ? (1) : (-1)) * (fangle + 2 * vangle * (Math.random() - 0.5));
@@ -341,7 +349,7 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 
 			angle = anglez;
 			(x1 = x3, y1 = y3, x2 = x4, y2 = y4, x4 = x4z, y4 = y4z, x3 = 0.5 * (x2 + x4), y3 = 0.5 * (y2 + y4));
-			this.t = speed;
+			this.t = this.speed;
 
 			bez.setBezierPoints.call(this, x1, y1, x2, y2, x3, y3);
 		}
@@ -363,6 +371,11 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 
 var HAS_PARTIED_LIKE_ITS_1984 = false,
 	PARTYING = false,
+
+	MIN_PARTY_SPERMS = 5,
+	MAX_PARTY_SPERMS = 50,
+	NEW_PARTY_PROB = 0.15,
+	NEW_PARTY_TIMEOUT = 3 * 1000,
 
 	// https://gist.github.com/maxogden/844879 great job!
 	PARTY_COLORS = [[203,51,1], [255,0,102], [255,102,102],
@@ -521,12 +534,20 @@ function partyDown(e)
 	upstairsParty = setInterval(einParty, 500);
 }
 
+var LAST_RANDOM_SPERM = 0;
+
 // randomise sprite instance colours
 function partyOn()
 {
 	var sperms = SPADGOS.getSperms(),
 		i = 0, l = sperms.length,
 		color;
+
+	// let's randomise counts sometimes too why not
+	if (Math.random() <= NEW_PARTY_PROB && ((new Date) - LAST_RANDOM_SPERM > NEW_PARTY_TIMEOUT)) {
+		SPADGOS.randomiseSperms(MIN_PARTY_SPERMS, MAX_PARTY_SPERMS);
+		LAST_RANDOM_SPERM = new Date;
+	}
 
 	for (; i < l; ++i) {
 		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
@@ -595,6 +616,9 @@ function partyOver(e)
 		target = partyTargets2[i];
 		target.style.color = '';
 	}
+
+	// reset BG as well
+	document.body.style.backgroundColor = '#41434B';
 }
 
 /***********************************************************************************************************************************************/
@@ -635,6 +659,19 @@ function onWindowLoad()
 
 // provide externally to allow tinkering with the options and reiniting (;
 
+SPADGOS.randomiseSperms = function(min, max)
+{
+	SPADGOS.SPERMS = min + Math.floor(Math.random() * (max - min));
+	SPADGOS.dosperm();
+};
+
+SPADGOS.randomiseSperm = function(sperm)
+{
+	sperm.speed = SPADGOS.SPERM_SPEED_MIN + Math.floor(Math.random() * (SPADGOS.SPERM_SPEED_MAX - SPADGOS.SPERM_SPEED_MIN));
+	sperm.bits = SPADGOS.TAIL_BITS_MIN + Math.floor(Math.random() * (SPADGOS.TAIL_BITS_MAX - SPADGOS.TAIL_BITS_MIN));
+	sperm.comp = SPADGOS.TAIL_COMPRESSION_MIN + Math.floor(Math.random() * (SPADGOS.TAIL_COMPRESSION_MAX - SPADGOS.TAIL_COMPRESSION_MIN));
+};
+
 SPADGOS.dosperm = function()
 {
 	// create canvas
@@ -667,7 +704,7 @@ SPADGOS.dosperm = function()
 
 	while (i < SPADGOS.SPERMS) {
 		THE_SPERMS[i] = new tail(canvas);
-		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 0.1, 20, 20, 20);
+		THE_SPERMS[i].bezierPath(boxwidth, boxheight, 20, 20, 20);
 		++i;
 	}
 
@@ -676,7 +713,8 @@ SPADGOS.dosperm = function()
 	canvas.runLoop();
 }
 
-SPADGOS.getSperms = function() {
+SPADGOS.getSperms = function()
+{
 	return THE_SPERMS;
 };
 
