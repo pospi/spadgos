@@ -14,7 +14,7 @@ var SPERMS = 10,			// number of sperms to swim around
 	SPERMBORDER = 70,		// twice pixel-width of border to stay inside
 	SPERMCOLOR = '#ADADAD',
 	TAILWIDTH = 4,
-	IMG_FLOWER_HEAD = 'img/flower-head.png',
+	IMG_FLOWER_HEAD = 'flower-head.png',
 	DEGREES_TO_RADIANS = 0.01745329;
 
 // we need this for efficient window watching
@@ -282,8 +282,14 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 			bez.setBezierPoints.call(this, x1, y1, x2, y2, x3, y3);
 		}
 
-		// :TODO: render graphic
-		// this.head._rotation = Math.atan2(this.y[1], this.x[1]) * 180 / Math.PI - 90;
+		// render graphic
+		this.context.save();
+
+		this.context.translate(this._x, this._y);
+		this.context.rotate(Math.atan2(this.y[1], this.x[1]) - 90 * DEGREES_TO_RADIANS);
+		this.context.drawImage(flowerHead, -20, -32);
+
+		this.context.restore();
 	};
 };
 
@@ -292,10 +298,31 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 //------------------------------------------------------------------------------
 
 var OLDLOAD = window.onload,
-	sw, sh, sx, sy, boxheight, boxwidth, k, i;
+	sw, sh, sx, sy, boxheight, boxwidth, k, i, flowerHead, assetsLoaded;
 
-window.onload = function()
+// load up the flower sprite
+flowerHead = new Image();
+flowerHead.onload = function() {
+	assetsLoaded = true;
+};
+flowerHead.src = IMG_FLOWER_HEAD;
+
+function loadFlowers()
 {
+	// run potential 3rd party init stuff
+
+	if (OLDLOAD) {
+		OLDLOAD.apply(this, arguments);
+		OLDLOAD = null;
+	}
+
+	// wait until we have the resources we need before doing anything...
+
+	if (!assetsLoaded) {
+		setTimeout(loadFlowers, 300);
+		return;
+	}
+
 	// create canvas
 
 	var canvas = new Stage(document.getElementById('draw'), function(deltaTime, currentTime) {
@@ -332,12 +359,8 @@ window.onload = function()
 	// begin!
 
 	canvas.runLoop();
-
-	// run potential 3rd party init stuff
-
-	if (OLDLOAD) {
-		OLDLOAD.apply(this, arguments);
-	}
 }
+
+window.onload = loadFlowers;
 
 })();
