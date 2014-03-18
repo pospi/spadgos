@@ -79,15 +79,16 @@ Stage.prototype.initDrawingArgs = function()
 Stage.prototype.watchResize = function()
 {
 	var self = this,
-		RESIZE = window.onresize,
 		cb = debounce(function(e) {
 				self.onResize();
 				self.initDrawingArgs();
 			});
 
+	this.backupResizeEvt = window.onresize;
+
 	window.onresize = function(e) {
-		if (RESIZE) {
-			RESIZE.apply(this, arguments);
+		if (self.backupResizeEvt) {
+			self.backupResizeEvt.apply(this, arguments);
 		}
 		cb.apply(this, arguments);
 	};
@@ -134,13 +135,13 @@ Stage.prototype.setAnimLoop = function(render, element)
 	{
 		var deltaT,
 			self = this,
-			now = +new Date;
+			now = +new Date,
 			run = function() {
 				self.runLoop();
 			};
 
 		if (running !== false) {
-			Stage.animMethod ? Stage.animMethod.call(window, run, element) : setTimeout(run, SPADGOS.FPS_BASELINE);
+			self.frameId = Stage.animMethod.call(window, run, element);
 
 			deltaT = now - lastFrame;
 			if (deltaT < SPADGOS.FPS_BASELINE) {
@@ -153,6 +154,17 @@ Stage.prototype.setAnimLoop = function(render, element)
 	};
 };
 
+// cleanup
+
+Stage.prototype.destruct = function()
+{
+	this.context = null;
+	this.dom = null;
+	window.onresize = this.backupResizeEvt;
+
+	Stage.cancelMethod.call(window, this.frameId);
+};
+
 // feature testing
 
 Stage.animMethod =	window.requestAnimationFrame ||
@@ -160,7 +172,15 @@ Stage.animMethod =	window.requestAnimationFrame ||
 					window.webkitRequestAnimationFrame ||
 					window.msRequestAnimationFrame ||
 					window.oRequestAnimationFrame ||
-					false;
+					function(/* function */ callback, /* DOMElement */ element){
+						return window.setTimeout(callback, 1000 / SPADGOS.FPS_BASELINE);
+					};
+Stage.cancelMethod = window.cancelAnimationFrame ||
+					window.mozCancelRequestAnimationFrame ||
+					window.webkitCancelRequestAnimationFrame ||
+					window.msCancelRequestAnimationFrame ||
+					window.oCancelRequestAnimationFrame ||
+					clearTimeout;
 
 //------------------------------------------------------------------------------
 // BEZIER MATH (blegh)
@@ -339,18 +359,11 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 
 var OLDLOAD = window.onload,
 	flowerHead, assetsLoaded,
-	THE_SPERMS = [];
+	THE_SPERMS = [], canvas;
 
-// load up the flower sprite
-flowerHead = new Image();
-flowerHead.onload = function() {
-	assetsLoaded = true;
-};
-flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
-
-function loadFlowers()
+function onWindowLoad()
 {
-	// run potential 3rd party init stuff
+	// run other init code when first bound to DOMready
 
 	if (OLDLOAD) {
 		OLDLOAD.apply(this, arguments);
@@ -363,10 +376,22 @@ function loadFlowers()
 		setTimeout(loadFlowers, 300);
 		return;
 	}
+	THE_SPERMS = [];
 
+	// begin the animation loop
+	SPADGOS.dosperm();
+}
+
+SPADGOS.dosperm = function()
+{
 	// create canvas
 
-	var canvas = new Stage(document.getElementById('draw'), function(deltaTime, currentTime) {
+	if (canvas) {
+		THE_SPERMS = [];
+		canvas.destruct();
+	}
+
+	canvas = new Stage(document.getElementById('draw'), function(deltaTime, currentTime) {
 		var i = 0;
 
 		this.clear();
@@ -398,6 +423,14 @@ function loadFlowers()
 	canvas.runLoop();
 }
 
-window.onload = loadFlowers;
+// load up the flower sprite
+flowerHead = new Image();
+flowerHead.onload = function() {
+	assetsLoaded = true;
+};
+flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
+
+// set window load event
+window.onload = onWindowLoad;
 
 })();
