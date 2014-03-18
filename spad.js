@@ -500,12 +500,13 @@ function toggleParty(e)
 	} else {
 		partyOver();
 	}
-	PARTYING = !PARTYING;
 }
 
 function partyDown(e)
 {
 	var targets, i, target, style;
+
+	PARTYING = true;
 
 	if (!HAS_PARTIED_LIKE_ITS_1984) {
 		// create tinted sprites for leaves & petals
@@ -520,6 +521,10 @@ function partyDown(e)
 
 	document.body.className = 'disco';
 
+	// regenerate spermcloud
+	SPADGOS.dosperm();
+
+	// flicker things
 	theParty = setInterval(partyOn, 250);
 }
 
@@ -556,6 +561,8 @@ function partyOver(e)
 	var sperms = SPADGOS.getSperms(),
 		i = 0, l = sperms.length;
 
+	PARTYING = false;
+
 	document.body.className = '';
 
 	clearInterval(theParty);
@@ -564,11 +571,8 @@ function partyOver(e)
 	neighboursParty = null;
 	upstairsParty = null;
 
-	// adjust sprite instance attributes back
-	for (; i < l; ++i) {
-		sperms[i].color = colorHex(SPADGOS.SPERMCOLOR);
-		sperms[i].spriteImage = SPADGOS.flowerHead;
-	}
+	// regenerate spermcloud
+	SPADGOS.dosperm();
 
 	// reset BG as well
 	SPADGOS.BG_COLOR = SPADGOS.DEFAULT_BG_COLOR;
