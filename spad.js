@@ -9,7 +9,7 @@
  */
 
 var SPADGOS = {
-	SPERMS : 50,			// number of sperms to swim around
+	SPERMS : 10,			// number of sperms to swim around
 	SPERMBORDER : 70,		// twice pixel-width of border to stay inside
 	SPERMCOLOR : '#ADADAD',
 	TAILWIDTH : 4,
