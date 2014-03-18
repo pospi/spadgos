@@ -252,7 +252,7 @@ function tail(canvas)
 	this.t = 			Math.random();
 	this.fr = 			0;
 
-	this.color =		colorRGB(SPADGOS.SPERMCOLOR);
+	this.color =		colorHex(SPADGOS.SPERMCOLOR);
 	this.spriteImage =	SPADGOS.flowerHead;
 
 	var i = 1;
@@ -361,8 +361,8 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
  * Spadgos party because yes.
  ***********************************************************************************************************************************************/
 
-var PARTYING = false,
-	INITED = false,
+var HAS_PARTIED_LIKE_ITS_1984 = false,
+	PARTYING = false,
 
 	// https://gist.github.com/maxogden/844879 great job!
 	PARTY_COLORS = [[203,51,1], [255,0,102], [255,102,102],
@@ -372,6 +372,10 @@ var PARTYING = false,
 					[254,52,154], [204,153,254],
 					[101,153,255], [3,205,255], [255,255,255]],
 
+	theParty = null, neighboursParty = null, upstairsParty = null,	// timeout handles
+	partyTargets = [],
+	partyTargets2 = [],
+	partyTargetsBackup = {},
 	PARTY_SPRITES = {},		// tinted for each colour above
 	spriteData;				// original grey tint
 
@@ -459,7 +463,7 @@ function generateTintImage(img, rgbks, red, green, blue)
 	return buff;
 }
 
-function colorRGB(color)
+function colorHex(color)
 {
 	return '#' + color[0].toString(16) + color[1].toString(16) + color[2].toString(16);
 }
@@ -482,23 +486,83 @@ function toggleParty(e)
 
 function partyDown(e)
 {
-	var sperms = SPADGOS.getSperms(),
-		i = 0, l = sperms.length,
-		hexColor;
+	var targets, i, target, style;
+
+	if (!HAS_PARTIED_LIKE_ITS_1984) {
+		// create tinted sprites for leaves & petals
+		for (i in PARTY_COLORS) {
+			color = PARTY_COLORS[i];
+			PARTY_SPRITES[colorHex(color)] = generateTintImage(SPADGOS.flowerHead, spriteData, color[0], color[1], color[2]);
+		}
+
+		// find DOM nodes we want to animate colour of
+
+		targets = document.getElementsByClassName('ct');
+		for (i = 0; i < targets.length; ++i) {
+			target = targets.item(i);
+
+			if (target.tagName.toLowerCase() == 'dt' || target.getAttribute('id') == 'party') {
+				style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
+				partyTargets.push(target);
+				partyTargetsBackup[partyTargets.length - 1] = style;
+			} else {
+				partyTargets2.push(target);
+			}
+		}
+
+		// done with init
+		HAS_PARTIED_LIKE_ITS_1984 = true;
+	}
 
 	document.body.className = 'disco';
 
-	// adjust sprite instance attributes
+	theParty = setInterval(partyOn, 250);
+	neighboursParty = setInterval(moreParty, 8000);
+	upstairsParty = setInterval(einParty, 500);
+}
+
+// randomise sprite instance colours
+function partyOn()
+{
+	var sperms = SPADGOS.getSperms(),
+		i = 0, l = sperms.length,
+		color;
+
 	for (; i < l; ++i) {
 		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
-		hexColor = colorRGB(color);
 
-		sperms[i].color = hexColor;
+		sperms[i].spriteImage = PARTY_SPRITES[colorHex(color)];
 
-		if (typeof PARTY_SPRITES[hexColor] == 'undefined') {
-			PARTY_SPRITES[hexColor] = generateTintImage(SPADGOS.flowerHead, spriteData, color[0], color[1], color[2]);
-		}
-		sperms[i].spriteImage = PARTY_SPRITES[hexColor];
+		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+		sperms[i].color = colorHex(color);
+	}
+}
+
+// randomise titles, on two different timers cos the text shadow kills it
+function moreParty()
+{
+	var i, l, target, color, hex, style;
+
+	for (i = 0, l = partyTargets.length; i < l; ++i) {
+		target = partyTargets[i];
+		style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
+
+		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+		hex = colorHex(color);
+
+		target.style.textShadow = style.replace(/(#[A-Z0-9]+)|(rgba?\s*\((\d|,|\s)+\))/g, hex);
+	}
+}
+function einParty()
+{
+	var i, l, target, color, hex, style;
+
+	for (i = 0, l = partyTargets2.length; i < l; ++i) {
+		target = partyTargets2[i];
+
+		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+
+		target.style.color = colorHex(color);
 	}
 }
 
@@ -509,10 +573,27 @@ function partyOver(e)
 
 	document.body.className = '';
 
+	clearInterval(theParty);
+	clearInterval(neighboursParty);
+	clearInterval(upstairsParty);
+	theParty = null;
+	neighboursParty = null;
+	upstairsParty = null;
+
 	// adjust sprite instance attributes back
 	for (; i < l; ++i) {
-		sperms[i].color = colorRGB(SPADGOS.SPERMCOLOR);
+		sperms[i].color = colorHex(SPADGOS.SPERMCOLOR);
 		sperms[i].spriteImage = SPADGOS.flowerHead;
+	}
+
+	// put DOM attributes back too
+	for (i = 0, l = partyTargets.length; i < l; ++i) {
+		target = partyTargets[i];
+		target.style.textShadow = partyTargetsBackup[i];
+	}
+	for (i = 0, l = partyTargets2.length; i < l; ++i) {
+		target = partyTargets2[i];
+		target.style.color = '';
 	}
 }
 
