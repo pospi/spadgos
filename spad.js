@@ -504,7 +504,8 @@ function toggleParty(e)
 
 function partyDown(e)
 {
-	var targets, i, target, style;
+	var targets, i, target, style,
+		tunes = document.getElementById('partytunes');
 
 	PARTYING = true;
 
@@ -526,6 +527,16 @@ function partyDown(e)
 
 	// flicker things
 	theParty = setInterval(partyOn, 250);
+
+	// turn on the sound
+	try {
+		if (typeof tunes.loop != 'boolean') {
+			tunes.addEventListener('ended', dontLetTheBeatsDrop, false);
+		} else {
+			tunes.loop = true;
+		}
+		tunes.play();
+	} catch (e) {}
 }
 
 var LAST_RANDOM_SPERM = 0;
@@ -559,7 +570,8 @@ function partyOn()
 function partyOver(e)
 {
 	var sperms = SPADGOS.getSperms(),
-		i = 0, l = sperms.length;
+		i = 0, l = sperms.length,
+		tunes = document.getElementById('partytunes');
 
 	PARTYING = false;
 
@@ -576,6 +588,20 @@ function partyOver(e)
 
 	// reset BG as well
 	SPADGOS.BG_COLOR = SPADGOS.DEFAULT_BG_COLOR;
+
+	// turn off the sound
+	try {
+		if (typeof tunes.loop != 'boolean') {
+			tunes.removeEventListener('ended', dontLetTheBeatsDrop, false);
+		}
+		tunes.pause();
+	} catch (e) {}
+}
+
+function dontLetTheBeatsDrop(e)
+{
+    this.currentTime = 0;
+    this.play();
 }
 
 /***********************************************************************************************************************************************/
