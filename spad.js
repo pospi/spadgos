@@ -96,8 +96,8 @@ Stage.prototype.clear = function()
 
 Stage.prototype.onResize = function()
 {
-	this.dom.setAttribute('width', this.dom.parentNode.clientWidth);
-	this.dom.setAttribute('height', this.dom.parentNode.clientHeight);
+	this.dom.width = this.dom.parentNode.clientWidth;
+	this.dom.height = this.dom.parentNode.clientHeight;
 	this.width = this.dom.clientWidth;
 	this.height = this.dom.clientHeight;
 
