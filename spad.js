@@ -14,6 +14,7 @@ var SPERMS = 10,			// number of sperms to swim around
 	SPERMBORDER = 70,		// twice pixel-width of border to stay inside
 	SPERMCOLOR = '#ADADAD',
 	TAILWIDTH = 4,
+	FPS_BASELINE = 1000 / 60,
 	IMG_FLOWER_HEAD = 'flower-head.png',
 	DEGREES_TO_RADIANS = 0.01745329;
 
@@ -35,7 +36,7 @@ function debounce(func, threshold, execAsap)
 		else if (execAsap)
 			func.apply(obj, args);
 
-		timeout = setTimeout(delayed, threshold || 100);
+		timeout = setTimeout(delayed, threshold || 300);
 	};
 }
 
@@ -130,14 +131,18 @@ Stage.prototype.setAnimLoop = function(render, element)
 	{
 		var deltaT,
 			self = this,
+			now = +new Date;
 			run = function() {
 				self.runLoop();
 			};
 
 		if (running !== false) {
-			Stage.animMethod ? Stage.animMethod.call(window, run, element) : setTimeout(run, 1000 / 60);
+			Stage.animMethod ? Stage.animMethod.call(window, run, element) : setTimeout(run, FPS_BASELINE);
 
 			deltaT = now - lastFrame;
+			if (deltaT < FPS_BASELINE) {
+				return;	// don't run if framerate is smaller than our baseline
+			}
 
 			running = render.call(this, deltaT, now);
 			lastFrame = now;
@@ -233,13 +238,13 @@ function tail(canvas)
 	}
 }
 
-tail.prototype.modulate = function()
+tail.prototype.modulate = function(timeScale)
 {
 	var i = 1;
 
 	while (i <= this.bits) {
-		var deltax = (this.x[i] || 0) - this.x[i - 1];
-		var deltay = (this.y[i] || 0) - this.y[i - 1];
+		var deltax = ((this.x[i] || 0) - this.x[i - 1]) * timeScale;
+		var deltay = ((this.y[i] || 0) - this.y[i - 1]) * timeScale;
 		this.a[i] = Math.atan2(deltay, deltax);
 		this.x[i] = this.x[i - 1] + this.r[i - 1] * Math.cos(this.a[i - 1]);
 		this.y[i] = this.y[i - 1] + this.r[i - 1] * Math.sin(this.a[i - 1]);
@@ -281,7 +286,7 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 
 	bez.setBezierPoints.call(this, xpos, ypos, x2, y2, x3, y3);
 
-	this.onRenderFrame = function()
+	this.onRenderFrame = function(deltaTime)
 	{
 		var k = 0,
 			loopCount = 0;
@@ -292,7 +297,7 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 		this._y = this.by3;
 		this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + Math.PI;
 
-		this.modulate();
+		this.modulate(deltaTime / FPS_BASELINE);
 		this.drawCurve();
 
 		this.t = this.t + speed;
