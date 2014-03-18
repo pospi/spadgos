@@ -4,7 +4,7 @@
  * 	Looks like a bus with a tail.
  *
  * @author  Sam Pospischil <pospi@spadgos.com>
- * @author	Core wiggling logic was taken from some very, very old code I found on my hard drive; author(s) unknown.
+ * @author	Bezier math was taken from some very, very old AS2 code I found on my hard drive; author(s) unknown.
  *         	If you recognise bits of this code, tell me! :p Credit where it's due and all that.
  */
 
@@ -12,7 +12,8 @@
 
 var SPERMS = 10,			// number of sperms to swim around
 	SPERMBORDER = 70,		// twice pixel-width of border to stay inside
-	SPERMCOLOR = '#FF00FF',
+	SPERMCOLOR = '#ADADAD',
+	TAILWIDTH = 4,
 	IMG_FLOWER_HEAD = 'img/flower-head.png',
 	DEGREES_TO_RADIANS = 0.01745329;
 
@@ -39,7 +40,7 @@ function debounce(func, threshold, execAsap)
 }
 
 //------------------------------------------------------------------------------
-// CANVAS INTERFACE		(:NOTE: Flash AS2 compatible API)
+// CANVAS INTERFACE
 //------------------------------------------------------------------------------
 
 function Stage(canvasEl, renderLoop)
@@ -54,6 +55,9 @@ function Stage(canvasEl, renderLoop)
 
 	// init the js Canvas
 	this.context = canvasEl.getContext('2d');
+	this.context.strokeStyle = SPERMCOLOR;
+	this.context.lineWidth = TAILWIDTH;
+	this.context.lineJoin = "round";
 
 	// listen for window resize events
 	this.watchResize();
@@ -185,15 +189,14 @@ function tail(canvas)
 	this.y =			[0];
 	this.mx =			[];
 	this.my =			[];
-	this.strokewidth =	4;
-	this.strokecolor =	SPERMCOLOR;
-	this.strokealpha =	100;
 	this.agility =		15;
 	this.speed =		5;
 	this.ang =			360 * Math.random();
 	this._x =			canvas.width * Math.random();
 	this._y =			canvas.height * Math.random();
 	this.phase = 		6.283185 * Math.random();
+	this.t = 			Math.random();
+	this.fr = 			0;
 
 	var i = 1;
 
@@ -221,109 +224,67 @@ tail.prototype.modulate = function()
 
 tail.prototype.drawCurve = function()
 {
-	this.context.strokeStyle = this.strokecolor;
-	this.context.lineWidth = this.strokewidth;
-	this.context.lineJoin = "round";
-
-	this.context.beginPath();
 	this.context.moveTo(this._x + this.x[0], this._y + this.y[0]);
-// console.log("START", this._x + this.x[0], this._y + this.y[0]);
+	this.context.beginPath();
+
 	for (var i = 2; i < this.bits; i++) {
-// console.log("NEXT", this._x + this.mx[i], this._y + this.my[i]);
 		this.context.quadraticCurveTo(this._x + this.x[i - 1], this._y + this.y[i - 1], this._x + this.mx[i], this._y + this.my[i]);
 	}
-	this.context.closePath();
 	this.context.stroke();
-// console.log("END");
 };
 
 tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle, vangle)
 {
-	this.fr = 0,
-	this.jump = jump,
-	this.fangle = fangle,
-	this.vangle = vangle,
-	this.x1,
-	this.y1,
-	this.x2,
-	this.y2,
-	this.x3,
-	this.y3,
-	this.x4,
-	this.y4,
-	this.x4z,
-	this.y4z,
-	this.angle,
-	this.anglez,
-	this.r2,
-	this.q,
-	this.speed = speed,
-	this.k,
-	this.top = ypos - 0.5000000 * boxh,
-	this.bottom = ypos + 0.5000000 * boxh,
-	this.left = xpos - 0.5000000 * boxw,
-	this.right = xpos + 0.5000000 * boxw;
+	var x1, y1, x2, y2, x3, y3, x4, y4, x4z, y4z, angle, anglez, r, q, speed, k,
+		top = ypos - 0.5 * boxh,
+		bottom = ypos + 0.5 * boxh,
+		left = xpos - 0.5 * boxw,
+		right = xpos + 0.5 * boxw;
 
-	this.t = Math.random();
+	angle = 360 * Math.random();
+	r = jump + jump * (Math.random() - 0.5);
+	(x2 = xpos + r * Math.cos(angle * DEGREES_TO_RADIANS), y2 = ypos + r * Math.sin(angle * DEGREES_TO_RADIANS));
+	angle = angle + (Math.floor(Math.random() * 2) ? (1) : (-1)) * (90 + 90 * (Math.random() - 0.5));
+	r = jump + jump * (Math.random() - 0.5);
+	(x4 = x2 + r * Math.cos(angle * DEGREES_TO_RADIANS), y4 = y2 + r * Math.sin(angle * DEGREES_TO_RADIANS), x3 = 0.5 * (x2 + x4), y3 = 0.5 * (y2 + y4));
 
-	this.angle = 360 * Math.random();
-	this.r2 = jump + jump * (Math.random() - 0.5000000);
-	this.x2 = xpos + this.r2 * Math.cos(this.angle * DEGREES_TO_RADIANS);
-	this.y2 = ypos + this.r2 * Math.sin(this.angle * DEGREES_TO_RADIANS);
+	bez.setBezierPoints.call(this, xpos, ypos, x2, y2, x3, y3);
 
-	this.angle = this.angle + (Math.floor(Math.random() * 2) ? 1 : -1) * (90 + 90 * (Math.random() - 0.5000000));
-	this.r2 = jump + jump * (Math.random() - 0.5000000);
-	this.x4 = this.x2 + this.r2 * Math.cos(this.angle * DEGREES_TO_RADIANS);
-	this.y4 = this.y2 + this.r2 * Math.sin(this.angle * DEGREES_TO_RADIANS);
-	this.x3 = 0.5000000 * (this.x2 + this.x4),
-	this.y3 = 0.5000000 * (this.y2 + this.y4);
-
-	bez.setBezierPoints.call(this, xpos, ypos, this.x2, this.y2, this.x3, this.y3);
-};
-
-tail.prototype.onRenderFrame = function(deltaTime)
-{
-	// construct and draw tail
-	bez.bezierSegment.call(this, 0, this.t);
-	this._x = this.bx3;
-	this._y = this.by3;
-	this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593;
-
-	this.modulate();
-	this.drawCurve();
-
-	this.t = this.t + this.speed;
-
-	if (this.t >= 1) {
-		this.r = this.jump + this.jump * (Math.random() - 0.5000000);
-		this.anglez = this.angle + (Math.floor(Math.random() * 2) ? 1 : -1) * (this.fangle + 2 * this.vangle * (Math.random() - 0.5000000));
-
+	this.onRenderFrame = function()
+	{
 		var k = 0,
 			loopCount = 0;
 
-		do {
-			this.anglez = this.anglez + 15 * k++ * Math.pow(-1, k);
-			this.x4z = this.x4 + this.r * Math.cos(this.anglez * DEGREES_TO_RADIANS);
-			this.y4z = this.y4 + this.r * Math.sin(this.anglez * DEGREES_TO_RADIANS);
-			loopCount++;
-		} while ((this.x4z < this.left || this.x4z > this.right || this.y4z < this.top || this.y4z > this.bottom) && loopCount < 100)
+		bez.bezierSegment.call(this, 0, this.t);
+		this._x = this.bx3;
+		this._y = this.by3;
+		this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + Math.PI;
 
-		this.angle = this.anglez;
-		this.x1 = this.x3;
-		this.y1 = this.y3;
-		this.x2 = this.x4;
-		this.y2 = this.y4;
-		this.x4 = this.x4z;
-		this.y4 = this.y4z;
-		this.x3 = 0.5000000 * (this.x2 + this.x4);
-		this.y3 = 0.5000000 * (this.y2 + this.y4);
-		this.t = this.speed;
+		this.modulate();
+		this.drawCurve();
 
-		bez.setBezierPoints.call(this, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
-	}
+		this.t = this.t + speed;
+		if (this.t >= 1) {
+			r = jump + jump * (Math.random() - 0.5);
+			anglez = angle + (Math.floor(Math.random() * 2) ? (1) : (-1)) * (fangle + 2 * vangle * (Math.random() - 0.5));
 
-	// :TODO: set graphic rotation
-	// this.head._rotation = Math.atan2(this.y[1], this.x[1]) * 180 / Math.PI - 90;
+			do {
+				anglez = anglez + 15 * k++ * Math.pow(-1, k);
+				x4z = x4 + r * Math.cos(anglez * DEGREES_TO_RADIANS);
+				y4z = y4 + r * Math.sin(anglez * DEGREES_TO_RADIANS);
+				loopCount++;
+			} while ((x4z < left || x4z > right || y4z < top || y4z > bottom) && loopCount < 100)
+
+			angle = anglez;
+			(x1 = x3, y1 = y3, x2 = x4, y2 = y4, x4 = x4z, y4 = y4z, x3 = 0.5 * (x2 + x4), y3 = 0.5 * (y2 + y4));
+			this.t = speed;
+
+			bez.setBezierPoints.call(this, x1, y1, x2, y2, x3, y3);
+		}
+
+		// :TODO: render graphic
+		// this.head._rotation = Math.atan2(this.y[1], this.x[1]) * 180 / Math.PI - 90;
+	};
 };
 
 //------------------------------------------------------------------------------
@@ -341,6 +302,7 @@ window.onload = function()
 		var i = 0;
 
 		this.clear();
+
 		while (i < SPERMS) {
 			k[i].onRenderFrame(deltaTime);
 			++i;
