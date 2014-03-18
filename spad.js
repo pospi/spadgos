@@ -530,8 +530,8 @@ function partyDown(e)
 	document.body.className = 'disco';
 
 	theParty = setInterval(partyOn, 250);
-	neighboursParty = setInterval(moreParty, 8000);
-	upstairsParty = setInterval(einParty, 500);
+	neighboursParty = setInterval(moreParty, 750);
+	// upstairsParty = setInterval(einParty, 500);
 }
 
 var LAST_RANDOM_SPERM = 0;
@@ -559,33 +559,37 @@ function partyOn()
 	}
 }
 
+// ...yeah it hates animating text shadow over a canvas.. and rightly so :p
+
 // randomise titles, on two different timers cos the text shadow kills it
 function moreParty()
 {
-	var i, l, target, color, hex, style;
+	document.body.style.backgroundColor = colorHex(PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)]);
 
-	for (i = 0, l = partyTargets.length; i < l; ++i) {
-		target = partyTargets[i];
-		style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
+	// var i, l, target, color, hex, style;
 
-		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
-		hex = colorHex(color);
+	// for (i = 0, l = partyTargets.length; i < l; ++i) {
+	// 	target = partyTargets[i];
+	// 	style = (target.currentStyle ? target.currentStyle : window.getComputedStyle(target, null)).getPropertyValue('text-shadow');
 
-		target.style.textShadow = style.replace(/(#[A-Z0-9]+)|(rgba?\s*\((\d|,|\s)+\))/g, hex);
-	}
+	// 	color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+	// 	hex = colorHex(color);
+
+	// 	target.style.textShadow = style.replace(/(#[A-Z0-9]+)|(rgba?\s*\((\d|,|\s)+\))/g, hex);
+	// }
 }
-function einParty()
-{
-	var i, l, target, color, hex, style;
+// function einParty()
+// {
+// 	var i, l, target, color, hex, style;
 
-	for (i = 0, l = partyTargets2.length; i < l; ++i) {
-		target = partyTargets2[i];
+// 	for (i = 0, l = partyTargets2.length; i < l; ++i) {
+// 		target = partyTargets2[i];
 
-		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+// 		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
 
-		target.style.color = colorHex(color);
-	}
-}
+// 		target.style.color = colorHex(color);
+// 	}
+// }
 
 function partyOver(e)
 {
@@ -596,7 +600,7 @@ function partyOver(e)
 
 	clearInterval(theParty);
 	clearInterval(neighboursParty);
-	clearInterval(upstairsParty);
+	// clearInterval(upstairsParty);
 	theParty = null;
 	neighboursParty = null;
 	upstairsParty = null;
