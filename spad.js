@@ -135,53 +135,41 @@ function MovieClip(canvas)
 
 MovieClip.prototype.beginFill = function(fillcolor, fillalpha)
 {
-	with (this.canvas.context) {
-		fillStyle = fillcolor;
-		beginPath();
-	}
+	this.canvas.context.fillStyle = fillcolor;
+	this.canvas.context.beginPath();
 };
 
 MovieClip.prototype.endFill = function()
 {
-	with (this.canvas.context) {
-		fill();
-	}
+	this.canvas.context.fill();
 };
 
 MovieClip.prototype.lineStyle = function(strokewidth, strokecolor, strokealpha)
 {
-	with (this.canvas.context) {
-		strokeStyle = strokecolor;
-		lineWidth = strokewidth;
-		lineJoin = "round";
-	}
+	this.canvas.context.strokeStyle = strokecolor;
+	this.canvas.context.lineWidth = strokewidth;
+	this.canvas.context.lineJoin = "round";
 };
 
 MovieClip.prototype.moveTo = function(x, y)
 {
-	with (this.canvas.context) {
-		moveTo(x, y);
-	}
+	this.canvas.context.moveTo(x, y);
 };
 
 // drawing methods
 
 MovieClip.prototype.lineTo = function(x, y)
 {
-	with (this.canvas.context) {
-		beginPath();
-		lineTo(x, y);
-		stroke();
-	}
+	this.canvas.context.beginPath();
+	this.canvas.context.lineTo(x, y);
+	this.canvas.context.stroke();
 };
 
 MovieClip.prototype.curveTo = function(x1, y1, x2, y2)
 {
-	with (this.canvas.context) {
-		beginPath();
-		quadraticCurveTo(x1, y1, x2, y2);
-		stroke();
-	}
+	this.canvas.context.beginPath();
+	this.canvas.context.quadraticCurveTo(x1, y1, x2, y2);
+	this.canvas.context.stroke();
 };
 
 MovieClip.prototype.drawBoxZ = function(xpos, ypos, mywidth, myheight, strokewidth, strokecolor, strokealpha, fillcolor, fillalpha)
@@ -225,36 +213,53 @@ bez.bezierDerivative = function(t, a, b, c)
 };
 bez.bezierSegment = function(t1, t2)
 {
-	with (this) {
-		bx1 = bez.bezierQuadratic.call(this, t1, this.x1, this.x2, this.x3);
-		by1 = bez.bezierQuadratic.call(this, t1, this.y1, this.y2, this.y3);
-		bx3 = bez.bezierQuadratic.call(this, t2, this.x1, this.x2, this.x3);
-		by3 = bez.bezierQuadratic.call(this, t2, this.y1, this.y2, this.y3);
-		bx2 = bez.bezierControl.call(this, t1, t2, this.x1, this.x2, this.x3);
-		by2 = bez.bezierControl.call(this, t1, t2, this.y1, this.y2, this.y3);
-	}
+	this.bx1 = bez.bezierQuadratic.call(this, t1, this.x1, this.x2, this.x3);
+	this.by1 = bez.bezierQuadratic.call(this, t1, this.y1, this.y2, this.y3);
+	this.bx3 = bez.bezierQuadratic.call(this, t2, this.x1, this.x2, this.x3);
+	this.by3 = bez.bezierQuadratic.call(this, t2, this.y1, this.y2, this.y3);
+	this.bx2 = bez.bezierControl.call(this, t1, t2, this.x1, this.x2, this.x3);
+	this.by2 = bez.bezierControl.call(this, t1, t2, this.y1, this.y2, this.y3);
 };
 bez.setBezierPoints = function(x1, y1, x2, y2, x3, y3)
 {
-	with (this) {
-		(x1 = x1, y1 = y1, x2 = x2, y2 = y2, x3 = x3, y3 = y3);
-	}
+	(this.x1 = this.x1, this.y1 = this.y1, this.x2 = this.x2, this.y2 = this.y2, this.x3 = this.x3, this.y3 = this.y3);
 };
 
 //------------------------------------------------------------------------------
 // SPERM TAILS
 //------------------------------------------------------------------------------
 
-function tail(canvas, opts)
+function tail(canvas)
 {
 	var i, opt;
 
 	MovieClip.call(this, canvas);
 
-	this.phase = 6.283185 * Math.random();
+	this.bits =			15;
+	this.comp =			0.98;
+	this.easing =		10;
+	this.largo =		8;
+	this.a =			[];
+	this.r =			[8];	// == largo
+	this.x =			[0];
+	this.y =			[0];
+	this.mx =			[];
+	this.my =			[];
+	this.strokewidth =	4;
+	this.strokecolor =	SPERMCOLOR;
+	this.strokealpha =	100;
+	this.agility =		15;
+	this.speed =		5;
+	this.ang =			360 * Math.random();
+	this._x =			canvas.width * Math.random();
+	this._y =			canvas.height * Math.random();
+	this.phase = 		6.283185 * Math.random();
 
-	for (i in opts) {
-		this[i] = opts[i];
+	var i = 1;
+
+	while (i < this.bits) {
+		this.r[i] = this.r[i - 1] * this.comp;
+		++i;
 	}
 }
 tail.prototype = new MovieClip();
@@ -337,6 +342,7 @@ tail.prototype.onRenderFrame = function()
 	this._y = this.by3;
 	this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593E+000;
 	this.modulate();
+
 	this.drawCurve();
 	this.t = this.t + this.speed;
 
@@ -376,38 +382,6 @@ tail.prototype.onRenderFrame = function()
 // MAIN PROGRAM
 //------------------------------------------------------------------------------
 
-function generateSpermOptions(canvas)
-{
-	var newobj = {
-			bits :			15,
-			comp :			0.98,
-			easing :		10,
-			largo :			8,
-			a :				[],
-			r :				[8],	// == newobj.largo
-			x :				[0],
-			y :				[0],
-			mx :			[],
-			my :			[],
-			strokewidth :	4,
-			strokecolor :	SPERMCOLOR,
-			strokealpha :	100,
-			agility :		15,
-			speed :			5,
-			ang :			360 * Math.random(),
-			_x :			canvas.width * Math.random(),
-			_y :			canvas.height * Math.random()
-		},
-		i = 1;
-
-	while (i < newobj.bits) {
-		newobj.r[i] = newobj.r[i - 1] * newobj.comp;
-		++i;
-	}
-
-	return newobj;
-}
-
 var OLDLOAD = window.onload,
 	sw, sh, sx, sy, boxheight, boxwidth, k, i;
 
@@ -440,8 +414,9 @@ window.onload = function()
 	// build instances
 
 	while (i < SPERMS) {
-		k[i] = new tail(canvas, generateSpermOptions(canvas));
+		k[i] = new tail(canvas);
 		k[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
+		k[i].modulate();
 		++i;
 	}
 
