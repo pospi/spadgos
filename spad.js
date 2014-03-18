@@ -20,6 +20,7 @@ var SPADGOS = {
 
 	SPERM_SPEED_MIN : 0.07,
 	SPERM_SPEED_MAX : 0.38,
+	PARTYSPEEDSCALE : 2.8,
 	TAIL_BITS_MIN : 11,
 	TAIL_BITS_MAX : 19,
 	TAIL_COMPRESSION_MIN : 0.97,
@@ -620,6 +621,10 @@ SPADGOS.randomiseSperm = function(sperm)
 	sperm.speed = SPADGOS.SPERM_SPEED_MIN + Math.floor(Math.random() * (SPADGOS.SPERM_SPEED_MAX - SPADGOS.SPERM_SPEED_MIN));
 	sperm.bits = SPADGOS.TAIL_BITS_MIN + Math.floor(Math.random() * (SPADGOS.TAIL_BITS_MAX - SPADGOS.TAIL_BITS_MIN));
 	sperm.comp = SPADGOS.TAIL_COMPRESSION_MIN + Math.floor(Math.random() * (SPADGOS.TAIL_COMPRESSION_MAX - SPADGOS.TAIL_COMPRESSION_MIN));
+
+	if (PARTYING) {	// :SHONK: 'evs
+		sperm.speed *= SPADGOS.PARTYSPEEDSCALE;
+	}
 };
 
 SPADGOS.dosperm = function()
