@@ -11,7 +11,7 @@
 var SPADGOS = {
 	SPERMS : 10,			// number of sperms to swim around
 	SPERMBORDER : 70,		// twice pixel-width of border to stay inside
-	SPERMCOLOR : '#ADADAD',
+	SPERMCOLOR : [173,173,173],
 	TAILWIDTH : 4,
 	FPS_BASELINE : 1000 / 60,
 	IMG_FLOWER_HEAD : 'flower-head.png'
@@ -70,7 +70,6 @@ function Stage(canvasEl, renderLoop)
 
 Stage.prototype.initDrawingArgs = function()
 {
-	this.context.strokeStyle = SPADGOS.SPERMCOLOR;
 	this.context.lineWidth = SPADGOS.TAILWIDTH;
 	this.context.lineJoin = "round";
 	this.context.lineCap = "round";
@@ -253,6 +252,9 @@ function tail(canvas)
 	this.t = 			Math.random();
 	this.fr = 			0;
 
+	this.color =		colorRGB(SPADGOS.SPERMCOLOR);
+	this.spriteImage =	SPADGOS.flowerHead;
+
 	var i = 1;
 
 	while (i < this.bits) {
@@ -279,6 +281,8 @@ tail.prototype.modulate = function(timeScale)
 
 tail.prototype.drawCurve = function()
 {
+	this.context.strokeStyle = this.color
+
 	this.context.moveTo(this._x + this.x[0], this._y + this.y[0]);
 	this.context.beginPath();
 
@@ -347,18 +351,178 @@ tail.prototype.bezierPath = function(boxw, boxh, speed, jump, fangle, vangle)
 
 		this.context.translate(this._x, this._y);
 		this.context.rotate(Math.atan2(this.y[1], this.x[1]) - 90 * DEGREES_TO_RADIANS);
-		this.context.drawImage(flowerHead, -20, -32);
+		this.context.drawImage(this.spriteImage, -20, -32);
 
 		this.context.restore();
 	};
 };
 
+/***********************************************************************************************************************************************
+ * Spadgos party because yes.
+ ***********************************************************************************************************************************************/
+
+var PARTYING = false,
+	INITED = false,
+
+	// https://gist.github.com/maxogden/844879 great job!
+	PARTY_COLORS = [[203,51,1], [255,0,102], [255,102,102],
+					[254,255,153], [255,255,103],
+					[204,255,102], [153,254,0],
+					[236,142,237], [255,153,203],
+					[254,52,154], [204,153,254],
+					[101,153,255], [3,205,255], [255,255,255]],
+
+	PARTY_SPRITES = {},		// tinted for each colour above
+	spriteData;				// original grey tint
+
 //------------------------------------------------------------------------------
+// TINT IMAGERY
+// http://www.playmycode.com/blog/2011/06/realtime-image-tinting-on-html5-canvas/
+//------------------------------------------------------------------------------
+
+function getImageChannels( img )
+{
+	var w = img.width;
+	var h = img.height;
+	var rgbks = [];
+
+	var canvas = document.createElement("canvas");
+	canvas.width = w;
+	canvas.height = h;
+
+	var ctx = canvas.getContext("2d");
+	ctx.drawImage( img, 0, 0 );
+
+	var pixels = ctx.getImageData( 0, 0, w, h ).data;
+
+	// 4 is used to ask for 3 images: red, green, blue and
+	// black in that order.
+	for ( var rgbI = 0; rgbI < 4; rgbI++ ) {
+		var canvas = document.createElement("canvas");
+		canvas.width  = w;
+		canvas.height = h;
+
+		var ctx = canvas.getContext('2d');
+		ctx.drawImage( img, 0, 0 );
+		var to = ctx.getImageData( 0, 0, w, h );
+		var toData = to.data;
+
+		for (
+				var i = 0, len = pixels.length;
+				i < len;
+				i += 4
+		) {
+			toData[i  ] = (rgbI === 0) ? pixels[i  ] : 0;
+			toData[i+1] = (rgbI === 1) ? pixels[i+1] : 0;
+			toData[i+2] = (rgbI === 2) ? pixels[i+2] : 0;
+			toData[i+3] =                pixels[i+3]    ;
+		}
+
+		ctx.putImageData(to, 0, 0);
+
+		// image is _slightly_ faster then canvas for this, so convert
+		var imgComp = new Image();
+		imgComp.src = canvas.toDataURL();
+
+		rgbks.push( imgComp );
+	}
+
+	return rgbks;
+}
+
+function generateTintImage(img, rgbks, red, green, blue)
+{
+	var buff = document.createElement( "canvas" );
+	buff.width  = img.width;
+	buff.height = img.height;
+
+	var ctx  = buff.getContext("2d");
+
+	ctx.globalAlpha = 1;
+	ctx.globalCompositeOperation = 'copy';
+	ctx.drawImage( rgbks[3], 0, 0 );
+
+	ctx.globalCompositeOperation = 'lighter';
+	if ( red > 0 ) {
+		ctx.globalAlpha = red   / 255.0;
+		ctx.drawImage( rgbks[0], 0, 0 );
+	}
+	if ( green > 0 ) {
+		ctx.globalAlpha = green / 255.0;
+		ctx.drawImage( rgbks[1], 0, 0 );
+	}
+	if ( blue > 0 ) {
+		ctx.globalAlpha = blue  / 255.0;
+		ctx.drawImage( rgbks[2], 0, 0 );
+	}
+
+	return buff;
+}
+
+function colorRGB(color)
+{
+	return '#' + color[0].toString(16) + color[1].toString(16) + color[2].toString(16);
+}
+
+//------------------------------------------------------------------------------
+// PARTYING interaction & UI bindings
+//------------------------------------------------------------------------------
+
+function toggleParty(e)
+{
+	e.preventDefault();
+
+	if (!PARTYING) {
+		partyDown();
+	} else {
+		partyOver();
+	}
+	PARTYING = !PARTYING;
+}
+
+function partyDown(e)
+{
+	var sperms = SPADGOS.getSperms(),
+		i = 0, l = sperms.length,
+		hexColor;
+
+	document.body.className = 'disco';
+
+	// adjust sprite instance attributes
+	for (; i < l; ++i) {
+		color = PARTY_COLORS[Math.floor(Math.random() * PARTY_COLORS.length)];
+		hexColor = colorRGB(color);
+
+		sperms[i].color = hexColor;
+
+		if (typeof PARTY_SPRITES[hexColor] == 'undefined') {
+			PARTY_SPRITES[hexColor] = generateTintImage(SPADGOS.flowerHead, spriteData, color[0], color[1], color[2]);
+		}
+		sperms[i].spriteImage = PARTY_SPRITES[hexColor];
+	}
+}
+
+function partyOver(e)
+{
+	var sperms = SPADGOS.getSperms(),
+		i = 0, l = sperms.length;
+
+	document.body.className = '';
+
+	// adjust sprite instance attributes back
+	for (; i < l; ++i) {
+		sperms[i].color = colorRGB(SPADGOS.SPERMCOLOR);
+		sperms[i].spriteImage = SPADGOS.flowerHead;
+	}
+}
+
+/***********************************************************************************************************************************************/
+
 // MAIN PROGRAM
 //------------------------------------------------------------------------------
 
 var OLDLOAD = window.onload,
-	flowerHead, assetsLoaded,
+	assetsLoaded,
 	THE_SPERMS = [], canvas;
 
 function onWindowLoad()
@@ -376,11 +540,19 @@ function onWindowLoad()
 		setTimeout(loadFlowers, 300);
 		return;
 	}
+
 	THE_SPERMS = [];
+	spriteData = getImageChannels(SPADGOS.flowerHead);
+	SPADGOS.flowerHead = generateTintImage(SPADGOS.flowerHead, spriteData, SPADGOS.SPERMCOLOR[0], SPADGOS.SPERMCOLOR[1], SPADGOS.SPERMCOLOR[2]);
 
 	// begin the animation loop
 	SPADGOS.dosperm();
+
+	// hookup the party
+	document.getElementById('party').onclick = toggleParty;
 }
+
+// provide externally to allow tinkering with the options and reiniting (;
 
 SPADGOS.dosperm = function()
 {
@@ -423,12 +595,16 @@ SPADGOS.dosperm = function()
 	canvas.runLoop();
 }
 
+SPADGOS.getSperms = function() {
+	return THE_SPERMS;
+};
+
 // load up the flower sprite
-flowerHead = new Image();
-flowerHead.onload = function() {
+SPADGOS.flowerHead = new Image();
+SPADGOS.flowerHead.onload = function() {
 	assetsLoaded = true;
 };
-flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
+SPADGOS.flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
 
 // set window load event
 window.onload = onWindowLoad;
