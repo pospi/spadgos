@@ -55,10 +55,7 @@ function Stage(canvasEl, renderLoop)
 
 	// init the js Canvas
 	this.context = canvasEl.getContext('2d');
-	this.context.strokeStyle = SPERMCOLOR;
-	this.context.lineWidth = TAILWIDTH;
-	this.context.lineJoin = "round";
-	this.context.lineCap = "round";
+	this.initDrawingArgs();
 
 	// listen for window resize events
 	this.watchResize();
@@ -67,18 +64,29 @@ function Stage(canvasEl, renderLoop)
 	this.setAnimLoop(renderLoop, canvasEl);
 };
 
+Stage.prototype.initDrawingArgs = function()
+{
+	this.context.strokeStyle = SPERMCOLOR;
+	this.context.lineWidth = TAILWIDTH;
+	this.context.lineJoin = "round";
+	this.context.lineCap = "round";
+};
+
 Stage.prototype.watchResize = function()
 {
 	var self = this,
-		RESIZE = window.onResize;
+		RESIZE = window.onresize,
+		cb = debounce(function(e) {
+				self.onResize();
+				self.initDrawingArgs();
+			});
 
-	window.onResize = debounce(function(e) {
-		self.onResize();
-
+	window.onresize = function(e) {
 		if (RESIZE) {
 			RESIZE.apply(this, arguments);
 		}
-	});
+		cb.apply(this, arguments);
+	};
 };
 
 Stage.prototype.clear = function()
@@ -92,6 +100,21 @@ Stage.prototype.onResize = function()
 	this.dom.setAttribute('height', this.dom.parentNode.clientHeight);
 	this.width = this.dom.clientWidth;
 	this.height = this.dom.clientHeight;
+
+	if (!THE_SPERMS.length) {
+		return;
+	}
+
+	var sx = 0.5 * this.width,
+		sy = 0.5 * this.height,
+		boxheight = this.height - SPERMBORDER,
+		boxwidth = this.width - SPERMBORDER,
+		i = 0;
+
+	while (i < SPERMS) {
+		THE_SPERMS[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
+		++i;
+	}
 };
 
 // animation mainloop (requestAnimationFrame with setTimeout fallback)
@@ -299,7 +322,8 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 //------------------------------------------------------------------------------
 
 var OLDLOAD = window.onload,
-	sw, sh, sx, sy, boxheight, boxwidth, k, i, flowerHead, assetsLoaded;
+	flowerHead, assetsLoaded,
+	THE_SPERMS = [];
 
 // load up the flower sprite
 flowerHead = new Image();
@@ -332,28 +356,24 @@ function loadFlowers()
 		this.clear();
 
 		while (i < SPERMS) {
-			k[i].onRenderFrame(deltaTime);
+			THE_SPERMS[i].onRenderFrame(deltaTime);
 			++i;
 		}
 	});
 
 	// init globals
 
-	sw = canvas.width;
-	sh = canvas.height;
-	sx = 0.5 * sw;
-	sy = 0.5 * sh;
-	boxheight = canvas.height - SPERMBORDER;
-	boxwidth = canvas.width - SPERMBORDER;
-	k = [];
-
-	var i = 0;
+	var sx = 0.5 * canvas.width,
+		sy = 0.5 * canvas.height,
+		boxheight = canvas.height - SPERMBORDER,
+		boxwidth = canvas.width - SPERMBORDER,
+		i = 0;
 
 	// build instances
 
 	while (i < SPERMS) {
-		k[i] = new tail(canvas);
-		k[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
+		THE_SPERMS[i] = new tail(canvas);
+		THE_SPERMS[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
 		++i;
 	}
 
