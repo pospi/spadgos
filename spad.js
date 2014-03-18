@@ -594,13 +594,11 @@ function onWindowLoad()
 	// wait until we have the resources we need before doing anything...
 
 	if (!assetsLoaded) {
-		setTimeout(loadFlowers, 300);
+		setTimeout(onWindowLoad, 300);
 		return;
 	}
 
 	THE_SPERMS = [];
-	spriteData = getImageChannels(SPADGOS.flowerHead);
-	SPADGOS.flowerHead = generateTintImage(SPADGOS.flowerHead, spriteData, SPADGOS.SPERMCOLOR[0], SPADGOS.SPERMCOLOR[1], SPADGOS.SPERMCOLOR[2]);
 
 	// begin the animation loop
 	SPADGOS.dosperm();
@@ -672,8 +670,15 @@ SPADGOS.getSperms = function()
 
 // load up the flower sprite
 SPADGOS.flowerHead = new Image();
-SPADGOS.flowerHead.onload = function() {
-	assetsLoaded = true;
+SPADGOS.flowerHead.onload = function()
+{
+	spriteData = getImageChannels(SPADGOS.flowerHead);
+
+	// :IMPORTANT: if you don't defer this, the data won't *quite* be ready in the Image object yet on first load
+	setTimeout(function() {
+		SPADGOS.flowerHead = generateTintImage(SPADGOS.flowerHead, spriteData, SPADGOS.SPERMCOLOR[0], SPADGOS.SPERMCOLOR[1], SPADGOS.SPERMCOLOR[2]);
+		assetsLoaded = true;
+	}, 0);
 };
 SPADGOS.flowerHead.src = SPADGOS.IMG_FLOWER_HEAD;
 
