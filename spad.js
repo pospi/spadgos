@@ -12,21 +12,48 @@
 
 var SPERMS = 10,			// number of sperms to swim around
 	SPERMBORDER = 70,		// twice pixel-width of border to stay inside
-	SPERMCOLOR = 0xADADAD,
+	SPERMCOLOR = '#ADADAD',
 	IMG_FLOWER_HEAD = 'img/flower-head.png',
 	DEGREES_TO_RADIANS = 0.01745329;
 
+// we need this for efficient window watching
+function debounce(func, threshold, execAsap)
+{
+	var timeout;
+
+	return function debounced() {
+		var obj = this, args = arguments;
+		function delayed () {
+			if (!execAsap)
+				func.apply(obj, args);
+			timeout = null;
+		};
+
+		if (timeout)
+			clearTimeout(timeout);
+		else if (execAsap)
+			func.apply(obj, args);
+
+		timeout = setTimeout(delayed, threshold || 100);
+	};
+}
+
 //------------------------------------------------------------------------------
-// CANVAS INTERFACE		(:NOTE: AS2 compatible API)
+// CANVAS INTERFACE		(:NOTE: Flash AS2 compatible API)
 //------------------------------------------------------------------------------
 
 function Stage(canvasEl, renderLoop)
 {
-	// instance variables
-	this.width = canvasEl.clientWidth;
-	this.height = canvasEl.clientHeight;
+	// abort if not supported
+	if (!canvasEl.getContext) {
+		return;
+	}
+
+	this.dom = canvasEl;
+	this.onResize();	// get initial size
 
 	// init the js Canvas
+	this.context = canvasEl.getContext('2d');
 
 	// listen for window resize events
 	this.watchResize();
@@ -37,7 +64,27 @@ function Stage(canvasEl, renderLoop)
 
 Stage.prototype.watchResize = function()
 {
+	var self = this,
+		RESIZE = window.onResize;
 
+	window.onResize = debounce(function(e) {
+		self.onResize();
+
+		if (RESIZE) {
+			RESIZE.apply(this, arguments);
+		}
+	});
+};
+
+Stage.prototype.clear = function()
+{
+	this.context.clearRect(0, 0, this.width, this.height);
+};
+
+Stage.prototype.onResize = function()
+{
+	this.width = this.dom.clientWidth;
+	this.height = this.dom.clientHeight;
 };
 
 // animation mainloop (requestAnimationFrame with setTimeout fallback)
@@ -60,7 +107,7 @@ Stage.prototype.setAnimLoop = function(render, element)
 
 			deltaT = now - lastFrame;
 
-			running = render(deltaT, now);
+			running = render.call(this, deltaT, now);
 			lastFrame = now;
 		}
 	};
@@ -76,48 +123,65 @@ Stage.animMethod =	window.requestAnimationFrame ||
 					false;
 
 //------------------------------------------------------------------------------
-// BASE RENDERING		(:NOTE: AS2 compatible API)
+// BASE RENDERING		(:NOTE: Flash AS2 compatible API)
 //------------------------------------------------------------------------------
 
-function MovieClip() {}
+function MovieClip(canvas)
+{
+	this.canvas = canvas;
+}
 
 // drawing state
 
 MovieClip.prototype.beginFill = function(fillcolor, fillalpha)
 {
-
+	with (this.canvas.context) {
+		fillStyle = fillcolor;
+		beginPath();
+	}
 };
 
 MovieClip.prototype.endFill = function()
 {
-
+	with (this.canvas.context) {
+		fill();
+	}
 };
 
 MovieClip.prototype.lineStyle = function(strokewidth, strokecolor, strokealpha)
 {
-
+	with (this.canvas.context) {
+		strokeStyle = strokecolor;
+		lineWidth = strokewidth;
+		lineJoin = "round";
+	}
 };
 
 MovieClip.prototype.moveTo = function(x, y)
 {
-
+	with (this.canvas.context) {
+		moveTo(x, y);
+	}
 };
 
 // drawing methods
 
-MovieClip.prototype.clear = function()
-{
-
-};
-
 MovieClip.prototype.lineTo = function(x, y)
 {
-
+	with (this.canvas.context) {
+		beginPath();
+		lineTo(x, y);
+		stroke();
+	}
 };
 
 MovieClip.prototype.curveTo = function(x1, y1, x2, y2)
 {
-
+	with (this.canvas.context) {
+		beginPath();
+		quadraticCurveTo(x1, y1, x2, y2);
+		stroke();
+	}
 };
 
 MovieClip.prototype.drawBoxZ = function(xpos, ypos, mywidth, myheight, strokewidth, strokecolor, strokealpha, fillcolor, fillalpha)
@@ -138,39 +202,43 @@ MovieClip.prototype.bezierDrawZ = function(strokewidth, strokecolor, strokealpha
 };
 
 //------------------------------------------------------------------------------
-// BEZIER CALCULATIONS
+// BEZIER MATH (blegh)
 //------------------------------------------------------------------------------
 
-function bez() {}
+var bez = {};
 
-bez.prototype.bezierQuadratic = function(t, a, b, c)
+bez.bezierQuadratic = function(t, a, b, c)
 {
 	return ((1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * c);
 };
-bez.prototype.bezierControl = function(t1, t2, a, b, c)
+bez.bezierControl = function(t1, t2, a, b, c)
 {
 	return (a + (t1 + t2) * (b - a) + t1 * t2 * (c - 2 * b + a));
 };
-bez.prototype.bezierAngle = function(t)
+bez.bezierAngle = function(t)
 {
-	return (Math.atan2(this.bezierDerivative(t, this.y1, this.y2, this.y3), this.bezierDerivative(t, this.x1, this.x2, this.x3)));
+	return (Math.atan2(bez.bezierDerivative(t, this.y1, this.y2, this.y3), bez.bezierDerivative(t, this.x1, this.x2, this.x3)));
 };
-bez.prototype.bezierDerivative = function(t, a, b, c)
+bez.bezierDerivative = function(t, a, b, c)
 {
 	return (2 * a * (t - 1) + 2 * b * (1 - 2 * t) + 2 * c * t);
 };
-bez.prototype.bezierSegment = function(t1, t2)
+bez.bezierSegment = function(t1, t2)
 {
-	this.bx1 = this.bezierQuadratic(t1, this.x1, this.x2, this.x3);
-	this.by1 = this.bezierQuadratic(t1, this.y1, this.y2, this.y3);
-	this.bx3 = this.bezierQuadratic(t2, this.x1, this.x2, this.x3);
-	this.by3 = this.bezierQuadratic(t2, this.y1, this.y2, this.y3);
-	this.bx2 = this.bezierControl(t1, t2, this.x1, this.x2, this.x3);
-	this.by2 = this.bezierControl(t1, t2, this.y1, this.y2, this.y3);
+	with (this) {
+		bx1 = bez.bezierQuadratic.call(this, t1, this.x1, this.x2, this.x3);
+		by1 = bez.bezierQuadratic.call(this, t1, this.y1, this.y2, this.y3);
+		bx3 = bez.bezierQuadratic.call(this, t2, this.x1, this.x2, this.x3);
+		by3 = bez.bezierQuadratic.call(this, t2, this.y1, this.y2, this.y3);
+		bx2 = bez.bezierControl.call(this, t1, t2, this.x1, this.x2, this.x3);
+		by2 = bez.bezierControl.call(this, t1, t2, this.y1, this.y2, this.y3);
+	}
 };
-bez.prototype.setBezierPoints = function(x1, y1, x2, y2, x3, y3)
+bez.setBezierPoints = function(x1, y1, x2, y2, x3, y3)
 {
-	(this.x1 = x1, this.y1 = y1, this.x2 = x2, this.y2 = y2, this.x3 = x3, this.y3 = y3);
+	with (this) {
+		(x1 = x1, y1 = y1, x2 = x2, y2 = y2, x3 = x3, y3 = y3);
+	}
 };
 
 //------------------------------------------------------------------------------
@@ -181,8 +249,9 @@ function tail(canvas, opts)
 {
 	var i, opt;
 
+	MovieClip.call(this, canvas);
+
 	this.phase = 6.283185 * Math.random();
-	this.canvas = canvas;
 
 	for (i in opts) {
 		this[i] = opts[i];
@@ -208,7 +277,6 @@ tail.prototype.modulate = function()
 
 tail.prototype.drawCurve = function()
 {
-	this.clear();
 	this.lineStyle(this.strokewidth, this.strokecolor, this.strokealpha);
 	this.moveTo(this.x[0], this.y[0]);
 
@@ -258,17 +326,16 @@ tail.prototype.bezierPath = function(xpos, ypos, boxw, boxh, speed, jump, fangle
 
 	this.t = Math.random();
 
-	this.bez = new bez();
-	this.bez.setBezierPoints(xpos, ypos, this.x2, this.y2, this.x3, this.y3);
+	bez.setBezierPoints.call(this, xpos, ypos, this.x2, this.y2, this.x3, this.y3);
 };
 
 tail.prototype.onRenderFrame = function()
 {
 	// construct and draw tail
-	this.bez.bezierSegment(0, this.t);
-	this._x = this.bez.bx3;
-	this._y = this.bez.by3;
-	this.a[0] = this.bez.bezierAngle(this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593E+000;
+	bez.bezierSegment.call(this, 0, this.t);
+	this._x = this.bx3;
+	this._y = this.by3;
+	this.a[0] = bez.bezierAngle.call(this, this.t) + 0.1570796 * Math.cos(this.phase + 30 * this.fr++ * DEGREES_TO_RADIANS) + 3.141593E+000;
 	this.modulate();
 	this.drawCurve();
 	this.t = this.t + this.speed;
@@ -298,7 +365,7 @@ tail.prototype.onRenderFrame = function()
 		this.y3 = 0.5000000 * (this.y2 + this.y4);
 		this.t = this.speed;
 
-		this.bez.setBezierPoints(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
+		bez.setBezierPoints.call(this, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
 	}
 
 	// :TODO: set graphic rotation
@@ -309,7 +376,7 @@ tail.prototype.onRenderFrame = function()
 // MAIN PROGRAM
 //------------------------------------------------------------------------------
 
-function generateSpermOptions()
+function generateSpermOptions(canvas)
 {
 	var newobj = {
 			bits :			15,
@@ -328,8 +395,8 @@ function generateSpermOptions()
 			agility :		15,
 			speed :			5,
 			ang :			360 * Math.random(),
-			_x :			Stage.width * Math.random(),
-			_y :			Stage.height * Math.random()
+			_x :			canvas.width * Math.random(),
+			_y :			canvas.height * Math.random()
 		},
 		i = 1;
 
@@ -348,8 +415,10 @@ window.onload = function()
 {
 	// create canvas
 
-	var canvas = new Stage(document.getElementById('SPADGOS'), function(deltaTime, currentTime) {
+	var canvas = new Stage(document.getElementById('draw'), function(deltaTime, currentTime) {
 		var i = 0;
+
+		this.clear();
 		while (i < SPERMS) {
 			k[i].onRenderFrame();
 			++i;
@@ -371,12 +440,13 @@ window.onload = function()
 	// build instances
 
 	while (i < SPERMS) {
-		k[i] = new tail(canvas, generateSpermOptions());
+		k[i] = new tail(canvas, generateSpermOptions(canvas));
 		k[i].bezierPath(sx, sy, boxwidth, boxheight, 0.1, 20, 20, 20);
 		++i;
 	}
 
 	// begin!
+
 	canvas.runLoop();
 
 	// run potential 3rd party init stuff
